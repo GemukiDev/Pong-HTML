@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PONG</title>
+    <style>
+
+* {
+    padding: 0;
+    margin: 0;
+}
+
+body{
+    background: black;
+    color: white;
+}
+
+.escenario {
+    width: 800px;
+    height: 600px;
+    margin: calc(50vh - 300px) auto 0;
+    border: 6px solid white;
+    position: relative;
+    overflow: hidden;
+}
+
+.marcador {
+    font-family: monospace;
+    font-size: 150px;
+    text-align: center;
+    line-height: 1;
+
+    width: 200px;
+    position: absolute;
+    top: 40px;
+}
+.marcador1 {
+    left: 100px;
+}
+.marcador2 {
+    right: 100px;
+}
+.pala  {
+    width: 20px;
+    height: 100px;
+    background: white;
+    position: absolute;
+    bottom: 50%;
+    transform: translate(-50%, 50%);
+}
+
+.pala1 {
+    left: 40px;
+}
+
+.pala2 {
+    left: 760px
+}
+
+.red {
+    position: absolute;
+    top:0;
+    bottom: 0;
+    left: calc(50% - 3px);
+    border-left: 6px dotted white;
+}
+.pelota {
+    background: white;
+    width: 20px;
+    height: 20px;
+    position: absolute;
+    bottom: 300px;
+    left: 400px;
+    transform: translate(-50%, 50%);
+    border-radius: 50%;
+}
+
+
+    </style>
+</head>
+<body>
+
+    <div class="escenario">
+        <div class="marcador marcador1">0</div>
+        <div class="marcador marcador2">0</div>
+
+        <div class="pala pala1"></div>
+        <div class="pala pala2"></div>
+
+        <div class="red"></div>
+        <div class="pelota"></div>
+    </div>
+
+<script>
+
+
+    // OBJETOS:
+
+    class Bordes {
+        constructor(minX, maxX, minY, maxY) {
+            this.minX = minX;
+            this.maxX = maxX;
+            this.minY = minY;
+            this.maxY = maxY;
+        }
+    }
+
+    class ObjetoMovil {
+        constructor(bordesTablero, elem) {
+            this.bordesTablero = bordesTablero;
+            this.x = parseInt(getComputedStyle(elem).left);
+            this.y = parseInt(getComputedStyle(elem).bottom);
+            this.ancho = parseInt(getComputedStyle(elem).width);
+            this.alto = parseInt(getComputedStyle(elem).height);
+            this.elem = elem;
+        }
+
+        GetBordes() {
+            return new Bordes(this.x - this.ancho/2, this.x + this.ancho/2, this.y - this.alto/2, this.y + this.alto/2);
+        }
+    }
+
+    class Pelota extends ObjetoMovil {
+        constructor(bordesTablero, elem, vel, dirX, dirY) {
+            super(bordesTablero, elem);
+            this.vel = vel;
+            this.dirX = dirX;
+            this.dirY = dirY;
+        }
+
+        Mover() {
+            this.x += this.dirX * this.vel;
+            this.y += this.dirY * this.vel;
+            this.elem.style.left = this.x+"px";
+            this.elem.style.bottom = this.y+"px";
+            this.ComprobarRebote();
+        }
+
+        ComprobarRebote() {
+            if(this.y + this.alto/2 > this.bordesTablero.maxY || this.y - this.alto/2 < this.bordesTablero.minY) {
+                this.RebotarY();
+            }
+        }
+        
+        RebotarX() {
+            this.dirX = -this.dirX;
+        }
+
+        RebotarY() {
+            this.dirY = -this.dirY;
+        }
+
+        ComprobarGol() {
+            if(this.x - this.ancho/2 < this.bordesTablero.minX) {
+                return 2;
+            } else if(this.x + this.ancho/2 > this.bordesTablero.maxX) {
+                return 1;
+            }
+            return 0;
+        }
+
+        Resetear(x, y, dirX, dirY) {
+            this.x = x;
+            this.y = y;
+            this.dirX = dirX;
+            this.dirY = dirY;
+        }
+
+    }
+
+    class Pala extends ObjetoMovil{
+        constructor(bordesTablero, elem, vel, keyCodeArriba, keyCodeAbajo) {
+            super(bordesTablero, elem);
+            
+            this.velActual = 0;
+            this.vel = vel;
+            this.keyCodeArriba = keyCodeArriba;
+            this.keyCodeAbajo = keyCodeAbajo;
+            document.addEventListener("keydown", this.IniciarMovimiento.bind(this));
+            document.addEventListener("keyup", this.FinalizarMovimiento.bind(this));
+        }
+
+        IniciarMovimiento(evento) {
+            if(evento.key == this.keyCodeArriba) {
+                this.velActual = this.vel;
+            } else if(evento.key == this.keyCodeAbajo) {
+                this.velActual = -this.vel;
+            }
+        }
+        FinalizarMovimiento(evento) {
+            this.velActual = 0;
+        }
+
+        Mover() {
+            this.y += this.velActual;
+            if(this.y + this.alto/2 > bordesTablero.maxY) this.y = this.bordesTablero.maxY - this.alto/2;
+            if(this.y - this.alto/2 < bordesTablero.minY) this.y = this.alto/2;
+            this.elem.style.bottom = this.y+"px";
+        }
+
+        ComprobarColision(bordes2) {
+            var bordes1 = this.GetBordes();
+            return !(
+                bordes1.maxX < bordes2.minX ||
+                bordes1.minX > bordes2.maxX ||
+                bordes1.maxY < bordes2.minY ||
+                bordes1.minY > bordes2.maxY
+            );
+        }
+    }
+
+    class Marcador {
+        constructor(elem) {
+            this.elem = elem;
+            this.puntos = 0;
+        }
+
+        GanarPunto() {
+            this.puntos++;
+            this.elem.innerHTML = ""+this.puntos;
+        }
+    }
+
+
+    // JUEGO
+    var bordesTablero = new Bordes(0, 800, 0, 600);
+    var dir = Math.random() * 2 * Math.PI;
+    var pelota = new Pelota(bordesTablero, document.querySelector(".pelota"), 6, Math.cos(dir), Math.sin(dir), 0.1);
+    var pala1 = new Pala(bordesTablero, document.querySelector(".pala1"), 7, "a", "z");
+    var pala2 = new Pala(bordesTablero, document.querySelector(".pala2"), 7, "ArrowUp", "ArrowDown");
+    var marcador1 = new Marcador(document.querySelector(".marcador1"));
+    var marcador2 = new Marcador(document.querySelector(".marcador2"));
+
+
+    function Update() {
+        pelota.Mover();
+        pala1.Mover();
+        pala2.Mover();
+        ComprobarPalazo();
+        ComprobarGol();
+    }
+
+    function ComprobarPalazo() {
+        if(pala1.ComprobarColision(pelota.GetBordes())) {
+            if(pelota.dirX < 0) pelota.RebotarX();
+        } else if(pala2.ComprobarColision(pelota.GetBordes())) {
+            if(pelota.dirX > 0) pelota.RebotarX();
+        }
+    }
+    function ComprobarGol() {
+        var resultado = pelota.ComprobarGol();
+        if(resultado != 0) {
+
+            if(resultado == 1) {
+                marcador1.GanarPunto();
+            } else if(resultado == 2) {
+                marcador2.GanarPunto();
+            }
+
+            var dir = Math.random() * 2 * Math.PI;
+            pelota.Resetear(400, 300, Math.cos(dir), Math.sin(dir));
+        }
+    }
+
+    // LOOP:
+    var time = Date.now;
+    var deltaTime = 0;
+    
+    function Tick() {
+        deltaTime = Date.now - time;
+        time = Date.now;
+        Update();
+        requestAnimationFrame(Tick);
+    }
+
+    // Arrancar juego:
+    requestAnimationFrame(Tick);
+
+</script>
+</body>
+</html>
