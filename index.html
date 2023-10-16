@@ -42,7 +42,7 @@ body{
     right: 100px;
 }
 .pala  {
-    width: 20px;
+    width: 14px;
     height: 100px;
     background: white;
     position: absolute;
@@ -63,17 +63,157 @@ body{
     top:0;
     bottom: 0;
     left: calc(50% - 3px);
+    border-width: 0px;
     border-left: 6px dotted white;
 }
 .pelota {
     background: white;
-    width: 20px;
-    height: 20px;
+    width: 24px;
+    height: 24px;
     position: absolute;
     bottom: 300px;
     left: 400px;
     transform: translate(-50%, 50%);
     border-radius: 50%;
+}
+
+
+.escenario.florido {
+    background: rgb(105, 39, 65);
+    border-color: rgb(255, 103, 252);
+    border-radius: 16px;
+}
+.escenario.florido .pala{
+    background: rgb(255, 103, 252);
+    border-radius: 10px;
+}
+.escenario.florido .pelota{
+    background: rgb(255, 193, 86);
+    width: 50px;
+    height: 50px;
+}
+.escenario.florido .red{
+    border-color: rgb(151, 61, 97);
+    border-width: 5px;
+    border-style: solid;
+}
+.escenario.florido .marcador{
+    font-family: Georgia, Times, 'Times New Roman', serif;
+    color: #83f591;
+}
+
+
+.escenario.neon {
+    background: rgb(4, 1, 39);
+    border: 3px solid rgb(0, 242, 255);
+    box-shadow: cyan 0 0 10px, cyan 0 0 10px inset;
+    border-radius: 8px;
+}
+.escenario.neon .pala{
+    background: rgb(5, 255, 226);
+    border-radius: 10px;
+    box-shadow: cyan 0 0 10px;
+    width: 6px;
+}
+.escenario.neon .pelota{
+    background: rgb(255, 245, 109);
+    box-shadow: rgb(255, 225, 30) 0 0 10px;
+    width: 16px;
+    height: 16px;
+}
+.escenario.neon .red{
+    border-color: rgb(255, 125, 246);
+}
+.escenario.neon .marcador{
+    font-family: "Futura", "Futura Std", Calibri, Verdana, Arial, 'Times New Roman', serif;
+    font-weight: 100;
+    color: rgb(255, 125, 246);
+    text-shadow: rgb(255, 36, 240) 0 0 10px;
+}
+
+
+.escenario.tecno {
+    background: rgb(136, 142, 184);
+    border: 10px ridge rgb(53, 102, 157);
+}
+.escenario.tecno .pala{
+    background: linear-gradient(to right, white 10%,rgb(46, 59, 115) 50% ,rgb(79, 124, 188) 90%);
+    box-shadow: rgb(73, 82, 133) 2px 2px 4px, rgba(255, 255, 255, 0.5) 0  0 2px 1px inset;
+    border-radius: 2px;
+    width: 8px;
+}
+.escenario.tecno .pelota{
+    background: white;
+    box-shadow: rgba(255, 255, 255, 0.5) -1px -1px 3px inset, rgb(90, 112, 163) -3px -3px 10px 2px inset,  black 2px 2px 5px -2px;
+    width: 20px;
+    height: 20px;
+}
+.escenario.tecno .red{
+    border-color: rgb(194, 205, 237);
+}
+.escenario.tecno .marcador{
+    font-family: "Futura", "Futura Std", Calibri, Verdana, Arial, 'Times New Roman', serif;
+    color: rgb(194, 205, 237);
+}
+
+
+.escenario.loco {
+    animation: arcoiris 0.4s linear infinite, escalar-borde 0.8s ease-out infinite alternate-reverse;
+    border: 10px solid currentColor;
+    background: rgb(255, 151, 40);
+}
+.escenario.loco .pala{
+    animation: arcoiris 0.4s linear infinite reverse;
+    background: currentColor;
+    border-radius: 2px;
+    width: 22px;
+}
+.escenario.loco .pelota{
+    animation: arcoiris 0.4s linear infinite;
+    background: currentColor;
+    width: 100px;
+    height: 100px;
+}
+.escenario.loco .red{
+    border-color: yellow;
+    border-style: dashed;
+}
+.escenario.loco .marcador{
+    font-family: "Comic Sans MS", Arial, 'Times New Roman', serif;
+    color: yellow;
+}
+
+@keyframes escalar-borde {
+    0% {
+        border-width: 8px;
+    }
+    100% {
+        border-width: 18px;
+    }
+}
+
+@keyframes arcoiris {
+    0% {
+        color: rgb(255, 58, 19);
+    }
+    17% {
+        color: yellow;
+    }
+    34% {
+        color: rgb(0, 255, 0);
+    }
+    50% {
+        color: cyan;
+    }
+    64% {
+        color: rgb(69, 45, 255);
+    }
+    83% {
+        color: rgb(255, 19, 239);
+    }
+    100% {
+        color: red;
+    }
 }
 
 
@@ -119,6 +259,11 @@ body{
         GetBordes() {
             return new Bordes(this.x - this.ancho/2, this.x + this.ancho/2, this.y - this.alto/2, this.y + this.alto/2);
         }
+
+        Resetear() {
+            this.ancho = parseInt(getComputedStyle(this.elem).width);
+            this.alto = parseInt(getComputedStyle(this.elem).height);
+        }
     }
 
     class Pelota extends ObjetoMovil {
@@ -162,11 +307,13 @@ body{
             return 0;
         }
 
-        Resetear(x, y, dirX, dirY) {
+        Resetear(vel, x, y, dirX, dirY) {
+            this.vel = vel;
             this.x = x;
             this.y = y;
             this.dirX = dirX;
             this.dirY = dirY;
+            super.Resetear()
         }
 
     }
@@ -236,6 +383,8 @@ body{
 
 
     // JUEGO
+    var escenarioElem = document.querySelector(".escenario");
+    var estilos = ["tecno", "florido", "neon", "loco"]
     var bordesTablero = new Bordes(0, 800, 0, 600);
     var dir = Math.random() * 2 * Math.PI;
     var pelota = new Pelota(bordesTablero, document.querySelector(".pelota"), 6, Math.cos(dir), Math.sin(dir), 0.1);
@@ -280,8 +429,11 @@ body{
         }
     }
     function Reiniciar() {
+        escenarioElem.className = "escenario "+ estilos[Math.floor(Math.random()*estilos.length)];
+        pala1.Resetear();
+        pala2.Resetear();
         var dir = Math.random() * 2 * Math.PI;
-        pelota.Resetear(400, 300, Math.cos(dir), Math.sin(dir));
+        pelota.Resetear(Math.random() * 4 + 6, 400, 300, Math.cos(dir), Math.sin(dir));
     }
 
     // LOOP:
