@@ -122,11 +122,12 @@ body{
     }
 
     class Pelota extends ObjetoMovil {
-        constructor(bordesTablero, elem, vel, dirX, dirY) {
+        constructor(bordesTablero, elem, vel, dirX, dirY, arrastre) {
             super(bordesTablero, elem);
             this.vel = vel;
             this.dirX = dirX;
             this.dirY = dirY;
+            this.arrastre = arrastre;
         }
 
         Mover() {
@@ -143,8 +144,9 @@ body{
             }
         }
         
-        RebotarX() {
+        RebotarX(inerciaY) {
             this.dirX = -this.dirX;
+            this.dirY += inerciaY * this.arrastre;
         }
 
         RebotarY() {
@@ -170,11 +172,13 @@ body{
     }
 
     class Pala extends ObjetoMovil{
-        constructor(bordesTablero, elem, vel, keyCodeArriba, keyCodeAbajo) {
+        constructor(bordesTablero, elem, vel, rozamiento, keyCodeArriba, keyCodeAbajo) {
             super(bordesTablero, elem);
             
+            this.moviendose = false;
             this.velActual = 0;
             this.vel = vel;
+            this.rozamiento = rozamiento;
             this.keyCodeArriba = keyCodeArriba;
             this.keyCodeAbajo = keyCodeAbajo;
             document.addEventListener("keydown", this.IniciarMovimiento.bind(this));
@@ -182,6 +186,7 @@ body{
         }
 
         IniciarMovimiento(evento) {
+            this.moviendose = true;
             if(evento.key == this.keyCodeArriba) {
                 this.velActual = this.vel;
             } else if(evento.key == this.keyCodeAbajo) {
@@ -189,7 +194,7 @@ body{
             }
         }
         FinalizarMovimiento(evento) {
-            this.velActual = 0;
+            this.moviendose = false;
         }
 
         Mover() {
@@ -197,6 +202,13 @@ body{
             if(this.y + this.alto/2 > bordesTablero.maxY) this.y = this.bordesTablero.maxY - this.alto/2;
             if(this.y - this.alto/2 < bordesTablero.minY) this.y = this.alto/2;
             this.elem.style.bottom = this.y+"px";
+        }
+
+        Frenar() {
+            if(!this.moviendose) {
+                this.velActual /= this.rozamiento;
+                if(Math.abs(this.velActual) < 0.1) this.velActual = 0;
+            }
         }
 
         ComprobarColision(bordes2) {
@@ -227,25 +239,31 @@ body{
     var bordesTablero = new Bordes(0, 800, 0, 600);
     var dir = Math.random() * 2 * Math.PI;
     var pelota = new Pelota(bordesTablero, document.querySelector(".pelota"), 6, Math.cos(dir), Math.sin(dir), 0.1);
-    var pala1 = new Pala(bordesTablero, document.querySelector(".pala1"), 7, "a", "z");
-    var pala2 = new Pala(bordesTablero, document.querySelector(".pala2"), 7, "ArrowUp", "ArrowDown");
+    var pala1 = new Pala(bordesTablero, document.querySelector(".pala1"), 6, 1.15, "a", "z");
+    var pala2 = new Pala(bordesTablero, document.querySelector(".pala2"), 6, 1.15, "ArrowUp", "ArrowDown");
     var marcador1 = new Marcador(document.querySelector(".marcador1"));
     var marcador2 = new Marcador(document.querySelector(".marcador2"));
 
 
     function Update() {
         pelota.Mover();
-        pala1.Mover();
-        pala2.Mover();
+        MoverPalas();
         ComprobarPalazo();
         ComprobarGol();
     }
 
+    function MoverPalas() {
+        pala1.Frenar();
+        pala2.Frenar();
+        pala1.Mover();
+        pala2.Mover();
+    }
+
     function ComprobarPalazo() {
         if(pala1.ComprobarColision(pelota.GetBordes())) {
-            if(pelota.dirX < 0) pelota.RebotarX();
+            if(pelota.dirX < 0) pelota.RebotarX(pala1.velActual);
         } else if(pala2.ComprobarColision(pelota.GetBordes())) {
-            if(pelota.dirX > 0) pelota.RebotarX();
+            if(pelota.dirX > 0) pelota.RebotarX(pala2.velActual);
         }
     }
     function ComprobarGol() {
@@ -258,9 +276,12 @@ body{
                 marcador2.GanarPunto();
             }
 
-            var dir = Math.random() * 2 * Math.PI;
-            pelota.Resetear(400, 300, Math.cos(dir), Math.sin(dir));
+            Reiniciar();
         }
+    }
+    function Reiniciar() {
+        var dir = Math.random() * 2 * Math.PI;
+        pelota.Resetear(400, 300, Math.cos(dir), Math.sin(dir));
     }
 
     // LOOP:
