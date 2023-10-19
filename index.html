@@ -158,18 +158,18 @@ body{
 
 
 .escenario.loco {
-    animation: arcoiris 0.4s linear infinite, escalar-borde 0.8s ease-out infinite alternate-reverse;
+    animation: arcoiris 2s linear infinite, escalar-borde 2s ease-out infinite alternate-reverse;
     border: 10px solid currentColor;
     background: rgb(255, 151, 40);
 }
 .escenario.loco .pala{
-    animation: arcoiris 0.4s linear infinite reverse;
+    animation: arcoiris 2s linear infinite;
     background: currentColor;
     border-radius: 2px;
     width: 22px;
 }
 .escenario.loco .pelota{
-    animation: arcoiris 0.4s linear infinite;
+    animation: arcoiris 2s linear infinite;
     background: currentColor;
     width: 100px;
     height: 100px;
@@ -247,8 +247,9 @@ body{
     }
 
     class ObjetoMovil {
-        constructor(bordesTablero, elem) {
+        constructor(bordesTablero, elem, vel) {
             this.bordesTablero = bordesTablero;
+            this.vel = vel;
             this.x = parseInt(getComputedStyle(elem).left);
             this.y = parseInt(getComputedStyle(elem).bottom);
             this.ancho = parseInt(getComputedStyle(elem).width);
@@ -268,23 +269,24 @@ body{
 
     class Pelota extends ObjetoMovil {
         constructor(bordesTablero, elem, vel, dirX, dirY, arrastre) {
-            super(bordesTablero, elem);
-            this.vel = vel;
+            super(bordesTablero, elem, vel);
             this.dirX = dirX;
             this.dirY = dirY;
             this.arrastre = arrastre;
         }
 
         Mover() {
-            this.x += this.dirX * this.vel;
-            this.y += this.dirY * this.vel;
+            this.x += this.dirX * this.vel * deltaTime;
+            this.y += this.dirY * this.vel * deltaTime;
             this.elem.style.left = this.x+"px";
             this.elem.style.bottom = this.y+"px";
             this.ComprobarRebote();
         }
 
         ComprobarRebote() {
-            if(this.y + this.alto/2 > this.bordesTablero.maxY || this.y - this.alto/2 < this.bordesTablero.minY) {
+            if(this.y + this.alto/2 > this.bordesTablero.maxY && this.dirY > 0) {
+                this.RebotarY();
+            } else if(this.y - this.alto/2 < this.bordesTablero.minY && this.dirY < 0) {
                 this.RebotarY();
             }
         }
@@ -320,11 +322,10 @@ body{
 
     class Pala extends ObjetoMovil{
         constructor(bordesTablero, elem, vel, rozamiento, keyCodeArriba, keyCodeAbajo) {
-            super(bordesTablero, elem);
+            super(bordesTablero, elem, vel);
             
             this.moviendose = false;
             this.velActual = 0;
-            this.vel = vel;
             this.rozamiento = rozamiento;
             this.keyCodeArriba = keyCodeArriba;
             this.keyCodeAbajo = keyCodeAbajo;
@@ -341,11 +342,13 @@ body{
             }
         }
         FinalizarMovimiento(evento) {
-            this.moviendose = false;
+            if(evento.key == this.keyCodeAbajo || evento.key == this.keyCodeArriba) {
+                this.moviendose = false;
+            }
         }
 
         Mover() {
-            this.y += this.velActual;
+            this.y += this.velActual * deltaTime;
             if(this.y + this.alto/2 > bordesTablero.maxY) this.y = this.bordesTablero.maxY - this.alto/2;
             if(this.y - this.alto/2 < bordesTablero.minY) this.y = this.alto/2;
             this.elem.style.bottom = this.y+"px";
@@ -387,9 +390,9 @@ body{
     var estilos = ["tecno", "florido", "neon", "loco"]
     var bordesTablero = new Bordes(0, 800, 0, 600);
     var dir = Math.random() * 2 * Math.PI;
-    var pelota = new Pelota(bordesTablero, document.querySelector(".pelota"), 6, Math.cos(dir), Math.sin(dir), 0.1);
-    var pala1 = new Pala(bordesTablero, document.querySelector(".pala1"), 6, 1.15, "a", "z");
-    var pala2 = new Pala(bordesTablero, document.querySelector(".pala2"), 6, 1.15, "ArrowUp", "ArrowDown");
+    var pelota = new Pelota(bordesTablero, document.querySelector(".pelota"), 300, Math.cos(dir), Math.sin(dir), 0.1);
+    var pala1 = new Pala(bordesTablero, document.querySelector(".pala1"), 300, 1.15, "a", "z");
+    var pala2 = new Pala(bordesTablero, document.querySelector(".pala2"), 300, 1.15, "ArrowUp", "ArrowDown");
     var marcador1 = new Marcador(document.querySelector(".marcador1"));
     var marcador2 = new Marcador(document.querySelector(".marcador2"));
 
@@ -410,9 +413,9 @@ body{
 
     function ComprobarPalazo() {
         if(pala1.ComprobarColision(pelota.GetBordes())) {
-            if(pelota.dirX < 0) pelota.RebotarX(pala1.velActual);
+            if(pelota.dirX < 0) pelota.RebotarX(pala1.velActual* deltaTime);
         } else if(pala2.ComprobarColision(pelota.GetBordes())) {
-            if(pelota.dirX > 0) pelota.RebotarX(pala2.velActual);
+            if(pelota.dirX > 0) pelota.RebotarX(pala2.velActual* deltaTime);
         }
     }
     function ComprobarGol() {
@@ -433,16 +436,16 @@ body{
         pala1.Resetear();
         pala2.Resetear();
         var dir = Math.random() * 2 * Math.PI;
-        pelota.Resetear(Math.random() * 4 + 6, 400, 300, Math.cos(dir), Math.sin(dir));
+        pelota.Resetear(Math.random() * 150 + 250, 400, 300, Math.cos(dir), Math.sin(dir));
     }
 
     // LOOP:
-    var time = Date.now;
+    var time = Date.now();
     var deltaTime = 0;
     
     function Tick() {
-        deltaTime = Date.now - time;
-        time = Date.now;
+        deltaTime = (Date.now() - time) / 1000; //deltaTime en segundos
+        time = Date.now();
         Update();
         requestAnimationFrame(Tick);
     }
